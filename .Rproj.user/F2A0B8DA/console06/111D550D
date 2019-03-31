@@ -21,3 +21,75 @@ Untracked files:
 
 nothing added to commit but untracked files present (use "git add" to track)
 ]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git add .
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git commit -m "Frist [K[K[K[K[Kirst commit-[K"
+[master (root-commit) d36d637] First commit
+ 14 files changed, 142 insertions(+)
+ create mode 100644 .Rhistory
+ create mode 100644 .Rproj.user/F2A0B8DA/console06/111D550D
+ create mode 100644 .Rproj.user/F2A0B8DA/console06/111D550D.env
+ create mode 100644 .Rproj.user/F2A0B8DA/console06/INDEX001
+ create mode 100644 .Rproj.user/F2A0B8DA/pcs/files-pane.pper
+ create mode 100644 .Rproj.user/F2A0B8DA/pcs/source-pane.pper
+ create mode 100644 .Rproj.user/F2A0B8DA/pcs/windowlayoutstate.pper
+ create mode 100644 .Rproj.user/F2A0B8DA/pcs/workbench-pane.pper
+ create mode 100644 .Rproj.user/F2A0B8DA/rmd-outputs
+ create mode 100644 .Rproj.user/F2A0B8DA/saved_source_markers
+ create mode 100644 .Rproj.user/F2A0B8DA/sources/s-C4D6A31F/lock_file
+ create mode 100644 .Rproj.user/shared/notebooks/patch-chunk-names
+ create mode 100644 Bootstrapping.Rproj
+ create mode 100644 Group_Project_3.pdf
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git push -u origin master
+Enumerating objects: 22, done.
+Counting objects:   4% (1/22)   Counting objects:   9% (2/22)   Counting objects:  13% (3/22)   Counting objects:  18% (4/22)   Counting objects:  22% (5/22)   Counting objects:  27% (6/22)   Counting objects:  31% (7/22)   Counting objects:  36% (8/22)   Counting objects:  40% (9/22)   Counting objects:  45% (10/22)   Counting objects:  50% (11/22)   Counting objects:  54% (12/22)   Counting objects:  59% (13/22)   Counting objects:  63% (14/22)   Counting objects:  68% (15/22)   Counting objects:  72% (16/22)   Counting objects:  77% (17/22)   Counting objects:  81% (18/22)   Counting objects:  86% (19/22)   Counting objects:  90% (20/22)   Counting objects:  95% (21/22)   Counting objects: 100% (22/22)   Counting objects: 100% (22/22), done.
+Delta compression using up to 8 threads
+Compressing objects:   7% (1/14)   Compressing objects:  14% (2/14)   Compressing objects:  21% (3/14)   Compressing objects:  28% (4/14)   Compressing objects:  35% (5/14)   Compressing objects:  42% (6/14)   Compressing objects:  50% (7/14)   Compressing objects:  57% (8/14)   Compressing objects:  64% (9/14)   Compressing objects:  71% (10/14)   Compressing objects:  78% (11/14)   Compressing objects:  85% (12/14)   Compressing objects:  92% (13/14)   Compressing objects: 100% (14/14)   Compressing objects: 100% (14/14), done.
+Writing objects:   4% (1/22)   Writing objects:   9% (2/22)   Writing objects:  13% (3/22)   Writing objects:  18% (4/22)   Writing objects:  22% (5/22)   Writing objects:  27% (6/22)   Writing objects:  31% (7/22)   Writing objects:  36% (8/22)   Writing objects:  40% (9/22)   Writing objects:  45% (10/22)   Writing objects:  50% (11/22)   Writing objects:  54% (12/22)   Writing objects:  59% (13/22)   Writing objects:  63% (14/22)   Writing objects:  68% (15/22)   Writing objects:  72% (16/22)   Writing objects:  77% (17/22)   Writing objects:  81% (18/22)   Writing objects:  86% (19/22)   Writing objects:  90% (20/22)   Writing objects:  95% (21/22)   Writing objects: 100% (22/22)   Writing objects: 100% (22/22), 137.53 KiB | 2.15 MiB/s, done.
+Total 22 (delta 0), reused 0 (delta 0)
+To github.com:thecbp/P8160_bootstrapping_project.git
+ * [new branch]      master -> master
+Branch 'master' set up to track remote branch 'master' from 'origin'.
+]0;~/Documents/columbia/S2019/Computing/project/Bootstrapping[?1034hChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+	[31mdeleted:    .Rproj.user/F2A0B8DA/sources/s-C4D6A31F/lock_file[m
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	[31m.gitignore[m
+	[31mEfron - Model Selection.pdf[m
+
+no changes added to commit (use "git add" and/or "git commit -a")
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git add .
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git rm .Rhistory
+rm '.Rhistory'
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	[32mdeleted:    .Rhistory[m
+	[32mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[32mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+	[32mdeleted:    .Rproj.user/F2A0B8DA/sources/s-C4D6A31F/lock_file[m
+	[32mnew file:   .gitignore[m
+	[32mnew file:   Efron - Model Selection.pdf[m
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D.env[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git statu[K[K[K[K[K[K add. [K[K .
