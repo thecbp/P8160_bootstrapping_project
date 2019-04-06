@@ -9,12 +9,24 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(foreach)
+library(glmnet)
 ```
 
-
+#Reading and cleaning the data
+```{r}
+down_dat = read_csv("Down.csv") %>% select(-MouseID) %>% mutate(Class = as.factor(Class))
+```
 
 #Function for smooth bootstrap
 ```{r}
-
+boot_smooth <- function(training,testing,iterations=1000){
+  predictions <- foreach(m = 1:iterations,.combine = cbind) %pardo% {
+    training_positions <- sample(nrow(training), size = nrow(training), replace = T)
+    train_pos <- 1:nrow(training) %in% training_positions
+    lm_fit <- glmnet(Class ~ .,data=training[train_pos,])
+    predict(lm_fit,newdata=testing)
+  }
+  rowMeans(predictions)
+}
 ```
 
