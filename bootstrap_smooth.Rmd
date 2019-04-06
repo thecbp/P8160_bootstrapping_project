@@ -1,0 +1,20 @@
+---
+title: "bootstrap-smoothing"
+author: "Junting Ren"
+date: "4/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(foreach)
+```
+
+
+
+#Function for smooth bootstrap
+```{r}
+
+```
+
