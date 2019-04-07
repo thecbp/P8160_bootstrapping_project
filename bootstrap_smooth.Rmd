@@ -8,25 +8,56 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(foreach)
 library(glmnet)
+library(doParallel)
+cl<-makeCluster(2) #change the 2 to your number of CPU cores  
+registerDoParallel(cl)  
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
 ```
 
 #Reading and cleaning the data
 ```{r}
-down_dat = read_csv("Down.csv") %>% select(-MouseID) %>% mutate(Class = as.factor(Class))
+down_dat = read_csv("Down.csv") %>% select(-MouseID) %>% mutate(Class = as.factor(Class)) %>% 
+  na.omit() #getting rid of nas since glmnet cannot handle missing data
+y_full = as.factor(as.matrix(ifelse(down_dat$Class == "Control",0,1)))
+x_full = as.matrix(down_dat %>% select(-Class))
+set.seed(100)
+train_index = sample(1:nrow(x_full), nrow(x_full) * 0.8)
+y_train = y_full[train_index]
+x_train = x_full[train_index,]
+y_test = y_full[-train_index]
+x_test = x_full[-train_index,]
 ```
 
 #Function for smooth bootstrap
 ```{r}
-boot_smooth <- function(training,testing,iterations=1000){
-  predictions <- foreach(m = 1:iterations,.combine = cbind) %pardo% {
-    training_positions <- sample(nrow(training), size = nrow(training), replace = T)
-    train_pos <- 1:nrow(training) %in% training_positions
-    lm_fit <- glmnet(Class ~ .,data=training[train_pos,])
-    predict(lm_fit,newdata=testing)
+boot_smooth <- function(x_train,y_train,x_test,y_test,iterations=1000){
+  predictions <- foreach(m = 1:iterations,.combine = cbind, .packages = "glmnet") %dopar% {
+    boot_positions <- sample(nrow(x_train), size = nrow(x_train), replace = T)
+    boot_pos <- 1:nrow(x_train) %in% boot_positions
+    y = y_train[boot_pos]
+    x = x_train[boot_pos,]
+    cv.lasso <- cv.glmnet(x_train, y_train, alpha = 1, family = "binomial")
+    # Fit the final model on the training data
+    model <- glmnet(x_train, y_train, alpha = 1, family = "binomial",
+                lambda = cv.lasso$lambda.min)
+    predict(model,newx = x_test, type = "class")
   }
-  rowMeans(predictions)
+  apply(predictions, 1, Mode) #Getting the mode across the rows: majority vote 
 }
+
+#tring out the boot_smooth function
+result = boot_smooth(x_train,y_train,x_test,y_test, iterations = 100)
+mean(result == y_test)
+```
+
+
+```{r}
+lasso = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial")
+z = predict(lasso, newx = x_test, type = "class", s = "lambda.min")
+mean(z == y_test) 
 ```
 
