@@ -1,0 +1,98 @@
+---
+title: "Part 4 Code"
+author: "Christian Pascual"
+date: "4/10/2019"
+output: html_document
+---
+
+# The current approach
+
+1) Draw randomly with replacement from the data
+2) Create a LASSO model from the bootstrap data
+3) Store the matrix of coefficients
+4) Perform the calculations needed to produce the smoothed estimate $\widetilde{\beta}$ and the smoothed standard devation $\widetilde{sd_b}$
+5) Test each of the coefficients against the hypotheses:
+
+# Code 
+
+```{r data, message = FALSE, warning = FALSE }
+library(tidyverse)
+library(glmnet)
+library(parallel) 
+library(doParallel) 
+library(foreach) 
+library(iterators)
+source("LogLasso.R") # where our Logistic LASSO algorithm lives
+
+nCores = 6 # change to whatever fits your specific system
+  registerDoParallel(nCores)
+
+ds = read.csv("Down.csv") %>% 
+  mutate(
+    class = ifelse(Class == "Control", 0, 1)) %>% 
+  select(-MouseID, -Class) %>% 
+  na.omit() # getting rid of nas since glmnet cannot handle missing data
+
+ds.X = ds %>% select(-class)
+ds.y = ds$class
+```
+
+```{r bootstrap }
+start = rep(0.01, 77)
+lambdas = exp(seq(-4, 1, length.out = 3))
+test = optimize(ds.X, ds.y, lambdas, start)
+```
+
+```{r}
+boot.count = function(idx, data) {
+  counts = NULL
+  for (i in 1:ncol(data)) {
+    counts[i] = length(which(idx == i))
+  }
+  return(counts)
+}
+
+cov.j = function(Yij, ti) {
+  
+}
+```
+
+
+```{r}
+B = 10
+coeff.mat = NULL
+Yij.mat = NULL
+for (i in 1:B) {
+  # Create the bootstrap sample
+  boot.idx = sample(nrow(ds), size = nrow(ds), replace = T)
+  boot.X = ds.X[boot.idx,] %>% as.matrix(.)
+  boot.y = ds.y[boot.idx] %>% as.matrix(.)
+  
+  Yij = boot.count(boot.idx, boot.X)
+  
+  # Cross-validate for lambda and then fit this optimal model
+  cv.lasso = cv.glmnet(boot.X, boot.y, alpha = 1, family = "binomial")
+  best.lasso = glmnet(boot.X, boot.y, alpha = 1, lambda = cv.lasso$lambda.min)
+  
+  # Extract the coefficients and store in a matrix
+  coeffs = matrix(coef(best.lasso))
+  coeff.mat = cbind(coeff.mat, coeffs)
+  Yij.mat = cbind(Yij.mat, Yij)
+}
+ff
+Y.j = rowSums(Yij.mat)/B
+t.j = rowSums(coeff.mat)/B
+
+# experiment for first beta
+first.Yij = Yij.mat[1,]
+first.Y.j = Y.j[1]
+first.ti = coeff.mat[1,]
+first.t.j = t.j[1]
+
+Yij.diff = first.Yij - first.Y.j
+t.diff = first.ti - first.t.j
+cov = (Yij.diff * t.diff)/B
+sd = sum(inner)
+```
+
+

@@ -93,3 +93,78 @@ Changes not staged for commit:
 	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
 
 ]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git statu[K[K[K[K[K[K add. [K[K .
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git commit -m "Aded[K[Kded Efron pdf" [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K"
+[master ddbe54f] Added Efron pdf
+ 7 files changed, 81 insertions(+), 5 deletions(-)
+ delete mode 100644 .Rhistory
+ rewrite .Rproj.user/F2A0B8DA/console06/INDEX001 (100%)
+ delete mode 100644 .Rproj.user/F2A0B8DA/sources/s-C4D6A31F/lock_file
+ create mode 100644 .gitignore
+ create mode 100644 Efron - Model Selection.pdf
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git push
+Enumerating objects: 17, done.
+Counting objects:   5% (1/17)   Counting objects:  11% (2/17)   Counting objects:  17% (3/17)   Counting objects:  23% (4/17)   Counting objects:  29% (5/17)   Counting objects:  35% (6/17)   Counting objects:  41% (7/17)   Counting objects:  47% (8/17)   Counting objects:  52% (9/17)   Counting objects:  58% (10/17)   Counting objects:  64% (11/17)   Counting objects:  70% (12/17)   Counting objects:  76% (13/17)   Counting objects:  82% (14/17)   Counting objects:  88% (15/17)   Counting objects:  94% (16/17)   Counting objects: 100% (17/17)   Counting objects: 100% (17/17), done.
+Delta compression using up to 8 threads
+Compressing objects:  11% (1/9)   Compressing objects:  22% (2/9)   Compressing objects:  33% (3/9)   Compressing objects:  44% (4/9)   Compressing objects:  55% (5/9)   Compressing objects:  66% (6/9)   Compressing objects:  77% (7/9)   Compressing objects:  88% (8/9)   Compressing objects: 100% (9/9)   Compressing objects: 100% (9/9), done.
+Writing objects:  10% (1/10)   Writing objects:  20% (2/10)   Writing objects:  30% (3/10)   Writing objects:  40% (4/10)   Writing objects:  50% (5/10)   Writing objects:  60% (6/10)   Writing objects:  70% (7/10)   Writing objects:  80% (8/10)   Writing objects:  90% (9/10)   Writing objects: 100% (10/10)   Writing objects: 100% (10/10), 605.64 KiB | 17.30 MiB/s, done.
+Total 10 (delta 2), reused 0 (delta 0)
+remote: Resolving deltas:   0% (0/2)   [Kremote: Resolving deltas:  50% (1/2)   [Kremote: Resolving deltas: 100% (2/2)   [Kremote: Resolving deltas: 100% (2/2), completed with 2 local objects.[K
+To github.com:thecbp/P8160_bootstrapping_project.git
+   d36d637..ddbe54f  master -> master
+]0;~/Documents/columbia/S2019/Computing/project/Bootstrapping[?1034hChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+
+no changes added to commit (use "git add" and/or "git commit -a")
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git p[K[K[K[K[K[KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git pull
+Enter passphrase for key '/Users/christianpascual/.ssh/id_rsa': 
+remote: Enumerating objects: 11, done.[K
+remote: Counting objects:   9% (1/11)   [Kremote: Counting objects:  18% (2/11)   [Kremote: Counting objects:  27% (3/11)   [Kremote: Counting objects:  36% (4/11)   [Kremote: Counting objects:  45% (5/11)   [Kremote: Counting objects:  54% (6/11)   [Kremote: Counting objects:  63% (7/11)   [Kremote: Counting objects:  72% (8/11)   [Kremote: Counting objects:  81% (9/11)   [Kremote: Counting objects:  90% (10/11)   [Kremote: Counting objects: 100% (11/11)   [Kremote: Counting objects: 100% (11/11), done.[K
+remote: Compressing objects:  11% (1/9)   [Kremote: Compressing objects:  22% (2/9)   [Kremote: Compressing objects:  33% (3/9)   [Kremote: Compressing objects:  44% (4/9)   [Kremote: Compressing objects:  55% (5/9)   [Kremote: Compressing objects:  66% (6/9)   [Kremote: Compressing objects:  77% (7/9)   [Kremote: Compressing objects:  88% (8/9)   [Kremote: Compressing objects: 100% (9/9)   [Kremote: Compressing objects: 100% (9/9), done.[K
+Unpacking objects:  10% (1/10)   Unpacking objects:  20% (2/10)   Unpacking objects:  30% (3/10)   Unpacking objects:  40% (4/10)   Unpacking objects:  50% (5/10)   remote: Total 10 (delta 5), reused 6 (delta 1), pack-reused 0[K
+Unpacking objects:  60% (6/10)   Unpacking objects:  70% (7/10)   Unpacking objects:  80% (8/10)   Unpacking objects:  90% (9/10)   Unpacking objects: 100% (10/10)   Unpacking objects: 100% (10/10), done.
+From github.com:thecbp/P8160_bootstrapping_project
+   ddbe54f..b42002c  master     -> origin/master
+Updating ddbe54f..b42002c
+Fast-forward
+ Down.csv             | 1081 [32m++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++[m
+ bootstrap_smooth.Rmd |   63 [32m+++++++[m
+ 2 files changed, 1144 insertions(+)
+ create mode 100644 Down.csv
+ create mode 100644 bootstrap_smooth.Rmd
+git pu]0;~/Documents/columbia/S2019/Computing/project/Bootstrapping[?1034hChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git pull
+Enter passphrase for key '/Users/christianpascual/.ssh/id_rsa': 
+Already up to date.
+it  ]0;~/Documents/columbia/S2019/Computing/project/Bootstrapping[?1034hChristians-MacBook-Pro-2:Bootstrapping christianpascual$ g[Kgit status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D.env[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/pcs/source-pane.pper[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/pcs/windowlayoutstate.pper[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/rmd-outputs[m
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	[31mLogLasso.R[m
+	[31mpart-4.Rmd[m
+
+no changes added to commit (use "git add" and/or "git commit -a")
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git pull
+Enter passphrase for key '/Users/christianpascual/.ssh/id_rsa': 
+Already up to date.
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git add .
