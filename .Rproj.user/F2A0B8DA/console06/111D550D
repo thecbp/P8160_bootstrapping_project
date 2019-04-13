@@ -168,3 +168,39 @@ no changes added to commit (use "git add" and/or "git commit -a")
 Enter passphrase for key '/Users/christianpascual/.ssh/id_rsa': 
 Already up to date.
 ]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git add .
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git commit -m "Added file fo r [K[K[K[K[K[Ks for impo rting project 2 log-lasso algor[K[K"
+[master cef259e] Added files for importing project 2 log-lasso alg
+ 8 files changed, 463 insertions(+), 11 deletions(-)
+ rewrite .Rproj.user/F2A0B8DA/console06/INDEX001 (87%)
+ create mode 100644 LogLasso.R
+ create mode 100644 part-4.Rmd
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git push
+Enter passphrase for key '/Users/christianpascual/.ssh/id_rsa': 
+Enumerating objects: 25, done.
+Counting objects:   4% (1/25)   Counting objects:   8% (2/25)   Counting objects:  12% (3/25)   Counting objects:  16% (4/25)   Counting objects:  20% (5/25)   Counting objects:  24% (6/25)   Counting objects:  28% (7/25)   Counting objects:  32% (8/25)   Counting objects:  36% (9/25)   Counting objects:  40% (10/25)   Counting objects:  44% (11/25)   Counting objects:  48% (12/25)   Counting objects:  52% (13/25)   Counting objects:  56% (14/25)   Counting objects:  60% (15/25)   Counting objects:  64% (16/25)   Counting objects:  68% (17/25)   Counting objects:  72% (18/25)   Counting objects:  76% (19/25)   Counting objects:  80% (20/25)   Counting objects:  84% (21/25)   Counting objects:  88% (22/25)   Counting objects:  92% (23/25)   Counting objects:  96% (24/25)   Counting objects: 100% (25/25)   Counting objects: 100% (25/25), done.
+Delta compression using up to 8 threads
+Compressing objects:   7% (1/14)   Compressing objects:  14% (2/14)   Compressing objects:  21% (3/14)   Compressing objects:  28% (4/14)   Compressing objects:  35% (5/14)   Compressing objects:  42% (6/14)   Compressing objects:  50% (7/14)   Compressing objects:  57% (8/14)   Compressing objects:  64% (9/14)   Compressing objects:  71% (10/14)   Compressing objects:  78% (11/14)   Compressing objects:  85% (12/14)   Compressing objects:  92% (13/14)   Compressing objects: 100% (14/14)   Compressing objects: 100% (14/14), done.
+Writing objects:   7% (1/14)   Writing objects:  14% (2/14)   Writing objects:  21% (3/14)   Writing objects:  28% (4/14)   Writing objects:  35% (5/14)   Writing objects:  42% (6/14)   Writing objects:  50% (7/14)   Writing objects:  57% (8/14)   Writing objects:  64% (9/14)   Writing objects:  71% (10/14)   Writing objects:  78% (11/14)   Writing objects:  85% (12/14)   Writing objects:  92% (13/14)   Writing objects: 100% (14/14)   Writing objects: 100% (14/14), 6.02 KiB | 2.01 MiB/s, done.
+Total 14 (delta 5), reused 0 (delta 0)
+remote: Resolving deltas:   0% (0/5)   [Kremote: Resolving deltas:  20% (1/5)   [Kremote: Resolving deltas:  40% (2/5)   [Kremote: Resolving deltas:  60% (3/5)   [Kremote: Resolving deltas:  80% (4/5)   [Kremote: Resolving deltas: 100% (5/5)   [Kremote: Resolving deltas: 100% (5/5), completed with 5 local objects.[K
+To github.com:thecbp/P8160_bootstrapping_project.git
+   b42002c..cef259e  master -> master
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ [KChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git status
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/111D550D[m
+	[31mmodified:   .Rproj.user/F2A0B8DA/console06/INDEX001[m
+	[31mmodified:   part-4.Rmd[m
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+
+	[31mreport.Rmd[m
+
+no changes added to commit (use "git add" and/or "git commit -a")
+]0;~/Documents/columbia/S2019/Computing/project/BootstrappingChristians-MacBook-Pro-2:Bootstrapping christianpascual$ git add .

@@ -46,14 +46,10 @@ test = optimize(ds.X, ds.y, lambdas, start)
 ```{r}
 boot.count = function(idx, data) {
   counts = NULL
-  for (i in 1:ncol(data)) {
+  for (i in 1:nrow(data)) {
     counts[i] = length(which(idx == i))
   }
   return(counts)
-}
-
-cov.j = function(Yij, ti) {
-  
 }
 ```
 
@@ -79,20 +75,28 @@ for (i in 1:B) {
   coeff.mat = cbind(coeff.mat, coeffs)
   Yij.mat = cbind(Yij.mat, Yij)
 }
-ff
+
 Y.j = rowSums(Yij.mat)/B
 t.j = rowSums(coeff.mat)/B
+t.diff = coeff.mat - t.j
+Yij.diff = Yij.mat - Y.j
 
-# experiment for first beta
-first.Yij = Yij.mat[1,]
-first.Y.j = Y.j[1]
-first.ti = coeff.mat[1,]
-first.t.j = t.j[1]
-
-Yij.diff = first.Yij - first.Y.j
-t.diff = first.ti - first.t.j
-cov = (Yij.diff * t.diff)/B
-sd = sum(inner)
 ```
 
+```{r}
+covs = NULL
+# Perform this action for each coefficient
+sdbs = NULL
+for (b in 1:78) {
+  covs = NULL
+  for (j in 1:nrow(ds)) {
+    cov.j = 0
+    for (i in 1:B) {
+      cov.j = cov.j + (Yij.diff[j,i] * t.diff[b,i])
+    }
+    covs = c(covs, cov.j/B)
+  }
+  sdbs = rbind(sdbs, covs)
+}
+```
 

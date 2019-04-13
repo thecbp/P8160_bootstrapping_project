@@ -1,0 +1,82 @@
+---
+title: "Rough Group Project"
+author: "Christian Pascual"
+date: "4/12/2019"
+output: pdf_document
+---
+
+# Introduction
+
+Down syndrome is a genetic disorder caused by the presence of a third copy of chromosome 21. As a genetic disorder, Down syndrome causes changes to the expression of several proteins within the body. Although screening tests exist for Down syndrome, more invasive procedures are needed to confirm the diagnosis. Thus, a non-invasive method to predict Down syndrome would be clinically useful. 
+
+We have data on the expression levels of 77 proteins/protein modifications produced in the cortex in 1080 mice. Some mice are controls and others are confirmed to have Down syndrome. The goal of this project is to create and train predictive models on this data. Since the number of predictor proteins is high, we plan to use and compare two models: a logistic-LASSO and a bootstrap-smoothed version of the logistic-LASSO to predict Down syndome.
+
+# Methods
+
+## Data Cleaning
+
+In its raw form, many of the mice are missing data for multiple proteins. In order to assure that we have complete data, we removed any rows that contained missing values. In the end, our working dataset has data for 552 mice, 255 are controls and 297 have Down syndrome. 
+
+## Logistic-LASSO
+
+Our implementation of the logistic-LASSO uses the Taylor expansion around "current estimates" $(\beta_0, \mathbf{\beta_1})$ to get an approximation to the logistic log-likelihood:
+$$f(\beta_0, \mathbf{\beta_1}) \approx l(\beta_0, \mathbf{\beta_1}) = -\frac{1}{2n} \sum^n_{i=1} \omega_i(z_i  -\beta_0 - \mathbf{x}^T_i\mathbf{\beta_1})^2 + C(\tilde{\beta_0}, \tilde{\mathbf{\beta_1}})$$
+
+where we have the working response:
+$$z_i = \tilde{\beta_0} + \mathbf{x}^T_i\tilde{\mathbf{\beta_1}} + \frac{y_i - \tilde{p_i}(x_i)}{\tilde{p_i}(x_i)(1 - \tilde{p_i}(x_i))}$$
+
+the working weights:
+$$\omega_i = \tilde{p_i}(x_i)(1 - \tilde{p_i}(x_i))$$
+and the probability given the current parameters:
+$$\tilde{p_i}(x_i) = \frac{e^{\tilde{\beta_0} + \mathbf{x}^T_i\mathbf{\beta_1}}}{1 + e^{\tilde{\beta_0} + \mathbf{x}^T_i\mathbf{\beta_1}}}$$
+
+Thus, we want to minimize the following objective equation:
+$$\mathop{min}_{(\beta_0, \mathbf{\beta_1)}} \bigg( \frac{1}{2n} \sum^n_{i=1} \omega_i(z_i  -\beta_0 - \mathbf{x}^T_i\mathbf{\beta_1})^2  + \lambda \sum^p_{j=0}|\beta_j| \bigg)$$
+
+Using pathwise coordinate descent, we know that if each observation has some weight $\omega_i$ associated with it, each $\beta$ can be updated according to a weighted version of the soft-thresholding function:
+$$\tilde{\beta_j} = \frac{S(\sum_i\omega_ix_{i,j}(y_i - \tilde{y}_i^{(-j)}), \gamma)}{\sum\omega_ix^2_{i,j}}$$
+
+In order to find an optimal $\lambda$ for the model, we will use 5-fold cross-validation. 
+
+## Bootstrap Smoothing
+
+Efron et. al laid out a methodology for using bagging to create smoothed estimators, standard errors and confidence intervals [1]. We applied Efron's methodology to create another predictive logistic model. A logistic-LASSO model was created for each of $B$ bootstrap samples. A prediction was made from these $B$ models using a majority vote; that is, each model predicts each mouse as either a control or with Down syndrome, and the prediction that is made the most is used as the final prediction.
+
+A smoothed estimate of each of the regression coefficients for a final model was created by averaging the calculated $\beta$'s per Efron's bagging methodology.
+
+$$
+s(y) = \frac{1}{B}\sum^B_{i=1}t(y^*)
+$$
+
+where $t(y^*)$ is the list of regression coefficients $\beta$ in this context.
+
+In order to make inferences, we calculated a smoothed standard error according to Efron. The smoothed standard error is given by:
+$$
+\widetilde{sd_B} = \bigg[ \sum^n_{j=1} \widehat{cov_j^2}  \bigg]^\frac{1}{2}
+$$
+where:
+$$
+\widehat{cov_j} = \frac{\sum^B_{i=1}(Y_{ij}^* - Y^*_{.j})(t^*_i - t^*_.)}{B}
+$$
+
+$\widehat{cov_j}$ represents the bootstrap covariance between $Y^*_{ij$ and $t^*_i$. $Y_{ij$ represents the number of elements in the bootstrap sample $y^*_i$ contains the original data point $y_j$. $t^*_.$ represents the smoothed bootstrap estimate for the statistic $t_i^*$. 
+
+We note that $\widetilde{sd_B}$ is biased upwards for the true value of $\widetilde{sd}$, but the bias correction deal with calculating the expectation of the ideal bootstrap smoothed estimate $s_0$, which is intractable for this particular problem. 
+
+### Regression Coefficient Inference
+
+With $\widetilde{sd_B}$, we can create a smoothed confidence interval around the bootstrap estimate:
+
+$$
+s(y) \pm 1.96 \times \widetilde{sd_B}
+$$
+
+Each regression coefficient will have a smoothed confidence interval associated with it. Any interval containing 0 will be considered non-significant association to Down syndrome. 
+
+# Results
+
+
+
+# References 
+
+1. B. Efron. Model selection, estimation, and bootstrap smoothing. Technical Report Stanford University, (262), 2012.
