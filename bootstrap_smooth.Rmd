@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(glmnet)
 library(doParallel)
+source("LogLasso.R")
 cl<-makeCluster(2) #change the 2 to your number of CPU cores  
 registerDoParallel(cl)  
 Mode <- function(x) {
@@ -22,15 +23,42 @@ Mode <- function(x) {
 ```{r}
 down_dat = read_csv("Down.csv") %>% select(-MouseID) %>% mutate(Class = as.factor(Class)) %>% 
   na.omit() #getting rid of nas since glmnet cannot handle missing data
-y_full = as.factor(as.matrix(ifelse(down_dat$Class == "Control",0,1)))
+y_full = as.matrix(ifelse(down_dat$Class == "Control",0,1))
 x_full = as.matrix(down_dat %>% select(-Class))
-set.seed(100)
-train_index = sample(1:nrow(x_full), nrow(x_full) * 0.8)
+set.seed(1001)
+#Geting the trained dataset
+train_index = sample(1:nrow(x_full), ceiling(nrow(x_full) * 0.8))
 y_train = y_full[train_index]
 x_train = x_full[train_index,]
+#getting the test dataset
 y_test = y_full[-train_index]
 x_test = x_full[-train_index,]
 ```
+# Apply the logistic-LASSO algorihtm your group developped in Project 2 to select features for predicting Down syndrome.
+## Finding our lambda sequence
+According to Regularization Paths for Generalized Linear Models via Coordinate Descent, $\lambda_{max}$ is the smallest $\lambda$ where $beta$ are 0. Our strategy is to select a minimum value $\lambda_{min} = \epsilon \lambda_{max}$, and construct a sequence of K values of $\lambda$ decreasing from  $\lambda_{max}$ to  $\lambda_{min}$. Here we let $\epsilon = 0.001$ and $K = 10$.
+```{r}
+#Using the built in function to get the max lambda
+model_glmnet = cv.glmnet(x_train, y_train, family = "binomial")
+#Getting our own lambda sequence
+lambda_seq = seq(max(model_glmnet$lambda), max(model_glmnet$lambda)*0.001, length.out = 10)
+```
+## Using our logistic lasso algorithm to find the lambda minimizes MSE through cross-validation
+```{r}
+log_lasso = optimize(as.data.frame(x_train),y_train, lambda_seq, rep(0.01, 77))
+```
+## Predicting on the dataset using our model
+```{r}
+y_predict_our_model = predict(model,x_test)
+y_response_our_model = as.numeric(y_predict_our_model > 0.5)
+accuracy_our_model = mean(y_response_our_model == y_test)
+#Compare with the built in lasso 
+lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
+y_response_glmnet = predict.cv.glmnet(lasso, newx = x_test, type = "class", s = "lambda.min")
+mean(y_response_glmnet == y_test) 
+```
+
+
 
 #Function for smooth bootstrap
 ```{r}
@@ -54,10 +82,4 @@ result = boot_smooth(x_train,y_train,x_test,y_test, iterations = 100)
 mean(result == y_test)
 ```
 
-
-```{r}
-lasso = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial")
-z = predict(lasso, newx = x_test, type = "class", s = "lambda.min")
-mean(z == y_test) 
-```
 
