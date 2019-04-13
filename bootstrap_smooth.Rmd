@@ -43,51 +43,74 @@ model_glmnet = cv.glmnet(x_train, y_train, family = "binomial")
 #Getting our own lambda sequence
 lambda_seq = seq(max(model_glmnet$lambda), max(model_glmnet$lambda)*0.001, length.out = 10)
 ```
-## Using our logistic lasso algorithm to find the lambda minimizes MSE through cross-validation
+
+## Fitting and predicting using our model and built in lasso regression function
 ```{r}
+#Our model
+start = Sys.time()
 log_lasso = optimize(as.data.frame(x_train),y_train, lambda_seq, rep(0.01, 77))
-```
-## Predicting on the dataset using our model
-```{r}
-y_predict_our_model = predict(model,x_test)
+our_model = log_lasso$finalModel
+y_predict_our_model = predict(our_model,x_test)
 y_response_our_model = as.numeric(y_predict_our_model > 0.5)
+end = Sys.time()
+#reuslts
 accuracy_our_model = mean(y_response_our_model == y_test)
-#Compare with the built in lasso 
+mse_our_model = mean((y_predict_our_model - y_test)^2)
+time_our_model = end - start
+lambda_our_model = log_lasso$lambda.min
+#Compare with the built in lasso
+start = Sys.time()
 lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
-y_response_glmnet = predict.cv.glmnet(lasso, newx = x_test, type = "class", s = "lambda.min")
-mean(y_response_glmnet == y_test) 
+y_response_glmnet = predict.cv.glmnet(lasso, newx = x_test, type = "response", s = "lambda.min")
+end = Sys.time()
+#results
+accuracy_glmnet = mean((y_response_glmnet>0.5) == y_test) 
+mse_glmnet = mean((y_response_glmnet - y_test)^2)
+time_glmnet = end - start
+lambda_glmnet = lasso_glmnet_cv$lambda.min
 ```
 
 
 
 # 2.Use the bootstrap-smoothing approach proposed in Efron (2014, JASA) to predict Down syndrome.
 
-##Building the bootstrap-smoothing function
+## Building the bootstrap-smoothing function
 ```{r}
-boot_smooth <- function(x_train,y_train,x_test,y_test,iterations=1000){
+boot_smooth <- function(x_train,y_train,x_test,y_test,lambda_seq,iterations=1000){
   predictions <- foreach(m = 1:iterations,.combine = cbind, .packages = "glmnet") %dopar% {
     boot_positions <- sample(nrow(x_train), size = nrow(x_train), replace = T)
     boot_pos <- 1:nrow(x_train) %in% boot_positions
     y = y_train[boot_pos]
     x = x_train[boot_pos,]
-    cv.lasso <- cv.glmnet(x_train, y_train, alpha = 1, family = "binomial")
+    cv.lasso <- cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
     # Fit the final model on the training data
     model <- glmnet(x_train, y_train, alpha = 1, family = "binomial",
                 lambda = cv.lasso$lambda.min)
-    predict(model,newx = x_test, type = "class")
+    predict(model,newx = x_test, type = "response")
   }
-  apply(predictions, 1, Mode) #Getting the mode across the rows: majority vote 
+  apply(predictions, 1, mean) #Getting the mode across the rows: majority vote 
 }
 
-#tring out the boot_smooth function
-result = boot_smooth(x_train,y_train,x_test,y_test, iterations = 100)
-mean(result == y_test)
 ```
 
+## Prediction for bootstrap-smoothing approac
+```{r}
+start = Sys.time()
+y_response_boot = boot_smooth(x_train,y_train,x_test,y_test, lambda_seq = lambda_seq, iterations = 100)
+end = Sys.time()
+#results
+accuracy_boot = mean((y_response_boot > 0.5) == y_test)
+mse_boot = mean((y_response_boot - y_test)^2)
+time_boot = end - start
+lambda_boot = NA
+```
 
 # 3.Compare the two approaches in predicting Down syndrome, and report your findings.
 ```{r}
-#BUilt a table
+#Build a result table
+data.frame(model = c("our", "built in cv lasso", "bootstrap smooth"), accuracy = c(accuracy_our_model, accuracy_glmnet, accuracy_boot),
+           mse = c(mse_our_model, mse_glmnet, mse_boot), time = c(time_our_model,time_glmnet,time_boot),
+           lambda_min = c(lambda_our_model, lambda_glmnet, lambda_boot))
 ```
 
 # 4.Using bootstrap-smoothing approach to select features
