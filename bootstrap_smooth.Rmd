@@ -27,7 +27,7 @@ y_full = as.matrix(ifelse(down_dat$Class == "Control",0,1))
 x_full = as.matrix(down_dat %>% select(-Class))
 set.seed(1001)
 #Geting the trained dataset
-train_index = sample(1:nrow(x_full), ceiling(nrow(x_full) * 0.8))
+train_index = sample(1:nrow(x_full), ceiling(nrow(x_full) * 0.9))
 y_train = y_full[train_index]
 x_train = x_full[train_index,]
 #getting the test dataset
@@ -61,7 +61,7 @@ lambda_our_model = log_lasso$lambda.min
 #Compare with the built in lasso
 start = Sys.time()
 lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
-y_response_glmnet = predict.cv.glmnet(lasso, newx = x_test, type = "response", s = "lambda.min")
+y_response_glmnet = predict.cv.glmnet(lasso_glmnet_cv, newx = x_test, type = "response", s = "lambda.min")
 end = Sys.time()
 #results
 accuracy_glmnet = mean((y_response_glmnet>0.5) == y_test) 
@@ -69,7 +69,6 @@ mse_glmnet = mean((y_response_glmnet - y_test)^2)
 time_glmnet = end - start
 lambda_glmnet = lasso_glmnet_cv$lambda.min
 ```
-
 
 
 # 2.Use the bootstrap-smoothing approach proposed in Efron (2014, JASA) to predict Down syndrome.
@@ -82,13 +81,13 @@ boot_smooth <- function(x_train,y_train,x_test,y_test,lambda_seq,iterations=1000
     boot_pos <- 1:nrow(x_train) %in% boot_positions
     y = y_train[boot_pos]
     x = x_train[boot_pos,]
-    cv.lasso <- cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
+    cv.lasso <- cv.glmnet(x, y, alpha = 1, family = "binomial", lambda = lambda_seq)
     # Fit the final model on the training data
-    model <- glmnet(x_train, y_train, alpha = 1, family = "binomial",
+    model <- glmnet(x, y, alpha = 1, family = "binomial",
                 lambda = cv.lasso$lambda.min)
     predict(model,newx = x_test, type = "response")
   }
-  apply(predictions, 1, mean) #Getting the mode across the rows: majority vote 
+  apply(predictions, 1, mean) #Getting the mean
 }
 
 ```
@@ -105,16 +104,59 @@ time_boot = end - start
 lambda_boot = NA
 ```
 
-# 3.Compare the two approaches in predicting Down syndrome, and report your findings.
+## Results comparing the three methods
 ```{r}
 #Build a result table
-data.frame(model = c("our", "built in cv lasso", "bootstrap smooth"), accuracy = c(accuracy_our_model, accuracy_glmnet, accuracy_boot),
+result_frame = data.frame(model = c("Our lasso", "Built in cv lasso", "Boot smooth mehtod"), accuracy = c(accuracy_our_model, accuracy_glmnet, accuracy_boot),
            mse = c(mse_our_model, mse_glmnet, mse_boot), time = c(time_our_model,time_glmnet,time_boot),
            lambda_min = c(lambda_our_model, lambda_glmnet, lambda_boot))
+knitr::kable(result_frame)
 ```
 
-# 4.Using bootstrap-smoothing approach to select features
+# 3.Compare the two approaches in predicting Down syndrome, and report your findings.
+
 ```{r}
 
 ```
+
+
+# 4.Using bootstrap-smoothing approach to select features
+## The basic algorithm:  
+1. Bootstrap from the full dataset  
+2. Cross validation and find the smallest MSE lambda model  
+3. Under this lambda model, store the coefficient for all variables.  
+4. Repeat step 1 to step 3 for $B$ times
+5.   
+Approach 1: Built an empirical confidence interval for coefficients, if the $2.5\%$ to $97.5\%$ percentile contains 0 then we drop this variable.  
+Approach 2: If any of the bootstrap coefficients contains 0, we drop this variable.  
+Approach 3: If any of the bootstrap coefficients contains non zero, we select this feature.  
+Approach 4: get the mode of the bootstrap coefficients, if the mode is non-zero, we select this feature.
+```{r}
+boot_smooth_select_feature <- function(x,y,lambda_seq,iterations=100){
+  coef_boot <- foreach(m = 1:iterations,.combine = cbind, .packages = c("glmnet","tidyverse")) %dopar% {
+    boot_positions <- sample(nrow(x), size = nrow(x), replace = T)
+    boot_pos <- 1:nrow(x) %in% boot_positions
+    y_boot = y[boot_pos]
+    x_boot = x[boot_pos,]
+    cv.lasso <- cv.glmnet(x_boot, y_boot, alpha = 1, family = "binomial", lambda = lambda_seq)
+    # Fit the final model on the training data
+    model <- glmnet(x_boot, y_boot, alpha = 1, family = "binomial",
+                lambda = cv.lasso$lambda.min)
+    coef(model)
+  }
+  approach1 = !(apply(coef_boot, 1, quantile, probs = c(0.025, 0.975)) %>% apply(.,2,is.element,0) %>% apply(.,2,any))
+  approach2 = !(apply(coef_boot, 1, is.element, 0) %>% apply(.,2, any))
+  approach3 = !(apply(coef_boot, 1, is.element, 0) %>% apply(.,2, all))
+  approach4 = !(apply(coef_boot, 1, Mode)  %>% is.element(.,0))
+  result = cbind(approach1,approach2,approach3, approach4)
+  return(result)
+ }
+```
+
+##Using this algorithm on the full dataset
+```{r}
+result = boot_smooth_select_feature(x_full,y_full, lambda_seq, iterations = 10)
+knitr::kable(result)
+```
+
 
