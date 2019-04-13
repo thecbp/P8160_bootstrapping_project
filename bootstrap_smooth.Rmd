@@ -34,7 +34,7 @@ x_train = x_full[train_index,]
 y_test = y_full[-train_index]
 x_test = x_full[-train_index,]
 ```
-# Apply the logistic-LASSO algorihtm your group developped in Project 2 to select features for predicting Down syndrome.
+# 1.Apply the logistic-LASSO algorihtm your group developped in Project 2 to select features for predicting Down syndrome.
 ## Finding our lambda sequence
 According to Regularization Paths for Generalized Linear Models via Coordinate Descent, $\lambda_{max}$ is the smallest $\lambda$ where $beta$ are 0. Our strategy is to select a minimum value $\lambda_{min} = \epsilon \lambda_{max}$, and construct a sequence of K values of $\lambda$ decreasing from  $\lambda_{max}$ to  $\lambda_{min}$. Here we let $\epsilon = 0.001$ and $K = 10$.
 ```{r}
@@ -60,7 +60,9 @@ mean(y_response_glmnet == y_test)
 
 
 
-#Function for smooth bootstrap
+# 2.Use the bootstrap-smoothing approach proposed in Efron (2014, JASA) to predict Down syndrome.
+
+##Building the bootstrap-smoothing function
 ```{r}
 boot_smooth <- function(x_train,y_train,x_test,y_test,iterations=1000){
   predictions <- foreach(m = 1:iterations,.combine = cbind, .packages = "glmnet") %dopar% {
@@ -82,4 +84,14 @@ result = boot_smooth(x_train,y_train,x_test,y_test, iterations = 100)
 mean(result == y_test)
 ```
 
+
+# 3.Compare the two approaches in predicting Down syndrome, and report your findings.
+```{r}
+#BUilt a table
+```
+
+# 4.Using bootstrap-smoothing approach to select features
+```{r}
+
+```
 
