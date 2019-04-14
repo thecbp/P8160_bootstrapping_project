@@ -92,7 +92,7 @@ boot_smooth <- function(x_train,y_train,x_test,y_test,lambda_seq,iterations=1000
 
 ```
 
-## Prediction for bootstrap-smoothing approac
+## Prediction for bootstrap-smoothing approach
 ```{r}
 start = Sys.time()
 y_response_boot = boot_smooth(x_train,y_train,x_test,y_test, lambda_seq = lambda_seq, iterations = 100)
@@ -114,11 +114,47 @@ knitr::kable(result_frame)
 ```
 
 # 3.Compare the two approaches in predicting Down syndrome, and report your findings.
-
+## We are going to use 5-fold cross validation on the full dataset to compare the MSE and accuracy of the two approaches. 
 ```{r}
-
+# Set the index for 5 fold cross-validation
+set.seed(1000)
+n_folds <- 5
+folds_i <- sample(rep(1:n_folds, length.out = nrow(x_full)))
+cv_tmp <- matrix(NA, nrow = n_folds, ncol = 4)
+for (k in 1:n_folds) {
+  #getting the train and test dataset for this fold
+  test_i <- which(folds_i == k)
+  x_test = x_full[test_i,]
+  y_test = y_full[test_i]
+  x_train = x_full[-test_i,]
+  y_train = y_full[-test_i]
+  
+  #Lasoo
+  lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
+  y_response_glmnet = predict.cv.glmnet(lasso_glmnet_cv, newx = x_test, type = "response", s = "lambda.min")
+  #results
+  accuracy_glmnet = mean((y_response_glmnet>0.5) == y_test) 
+  mse_glmnet = mean((y_response_glmnet - y_test)^2)
+  
+  #bootstrap smooth
+  y_response_boot = boot_smooth(x_train,y_train,x_test,y_test, lambda_seq = lambda_seq, iterations = 100)
+  #results
+  accuracy_boot = mean((y_response_boot > 0.5) == y_test)
+  mse_boot = mean((y_response_boot - y_test)^2)
+  
+  #Building the result dataframe
+  cv_tmp[k, 1] = accuracy_glmnet
+  cv_tmp[k, 2] = accuracy_boot
+  cv_tmp[k, 3] = mse_glmnet
+  cv_tmp[k, 4] = mse_boot
+}
+result_cv = as.data.frame(cv_tmp)
+names(result_cv) = c("accuracy_glmnet", "accuracy_boot", "mse_glmnet", "mse_boot")
+result_cv = colMeans(result_cv)
+result_cv
 ```
 
+It seems they have the same accuracy. 
 
 # 4.Using bootstrap-smoothing approach to select features
 ## The basic algorithm:  
