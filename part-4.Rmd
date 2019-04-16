@@ -1,5 +1,5 @@
 ---
-title: "Part 4 Code"
+title: "Part 4: Making Bootstrap Inferences"
 author: "Christian Pascual"
 date: "4/10/2019"
 output: html_document
@@ -22,10 +22,9 @@ library(parallel)
 library(doParallel) 
 library(foreach) 
 library(iterators)
-source("LogLasso.R") # where our Logistic LASSO algorithm lives
 
 nCores = 6 # change to whatever fits your specific system
-  registerDoParallel(nCores)
+registerDoParallel(nCores)
 
 ds = read.csv("Down.csv") %>% 
   mutate(
@@ -37,13 +36,7 @@ ds.X = ds %>% select(-class)
 ds.y = ds$class
 ```
 
-```{r bootstrap }
-start = rep(0.01, 77)
-lambdas = exp(seq(-4, 1, length.out = 3))
-test = optimize(ds.X, ds.y, lambdas, start)
-```
-
-```{r}
+```{r, helpers }
 boot.count = function(idx, data) {
   counts = NULL
   for (i in 1:nrow(data)) {
@@ -53,22 +46,57 @@ boot.count = function(idx, data) {
 }
 ```
 
-
-```{r}
-B = 10
+```{r, bootstrapping }
+B = 1000
 coeff.mat = NULL
 Yij.mat = NULL
+
+multiResultClass = function(res1 = NULL, res2 = NULL) {
+  me = list(
+    res2 = res2,
+    res1 = res1
+  )
+  return(me)
+}
+
+bs = foreach(i = 1:B, .combine = cbind) %dopar% {
+  res = multiResultClass()
+               
+  # Create the bootstrap sample
+  boot.idx = sample(nrow(ds), size = nrow(ds), replace = T)
+  boot.X = ds.X[boot.idx,] %>% as.matrix(.)
+  boot.y = ds.y[boot.idx] %>% as.matrix(.)
+  
+  # Calculate the count matrix
+  Yij = boot.count(boot.idx, boot.X)
+  
+  # Cross-validate for lambda and then fit this optimal model
+  cv.lasso = cv.glmnet(boot.X, boot.y, alpha = 1, family = "binomial")
+  best.lasso = glmnet(boot.X, boot.y, 
+                      alpha = 1, lambda = cv.lasso$lambda.min)
+  
+  # Extract the coefficients and store in a matrix
+  coeffs = matrix(coef(best.lasso))
+  coeff.mat = cbind(coeff.mat, coeffs)
+  Yij.mat = cbind(Yij.mat, Yij)
+  
+  res$res1 = coeffs
+  res$res2 = Yij
+  }
+
 for (i in 1:B) {
   # Create the bootstrap sample
   boot.idx = sample(nrow(ds), size = nrow(ds), replace = T)
   boot.X = ds.X[boot.idx,] %>% as.matrix(.)
   boot.y = ds.y[boot.idx] %>% as.matrix(.)
   
+  # Calculate the count matrix
   Yij = boot.count(boot.idx, boot.X)
   
   # Cross-validate for lambda and then fit this optimal model
   cv.lasso = cv.glmnet(boot.X, boot.y, alpha = 1, family = "binomial")
-  best.lasso = glmnet(boot.X, boot.y, alpha = 1, lambda = cv.lasso$lambda.min)
+  best.lasso = glmnet(boot.X, boot.y, 
+                      alpha = 1, lambda = cv.lasso$lambda.min)
   
   # Extract the coefficients and store in a matrix
   coeffs = matrix(coef(best.lasso))
@@ -76,27 +104,71 @@ for (i in 1:B) {
   Yij.mat = cbind(Yij.mat, Yij)
 }
 
+# Finishing off the calculations
 Y.j = rowSums(Yij.mat)/B
 t.j = rowSums(coeff.mat)/B
 t.diff = coeff.mat - t.j
 Yij.diff = Yij.mat - Y.j
-
 ```
 
 ```{r}
-covs = NULL
 # Perform this action for each coefficient
-sdbs = NULL
+cov.mat = NULL
 for (b in 1:78) {
   covs = NULL
   for (j in 1:nrow(ds)) {
+    # Each individual point will have a bootstrap
+    # covariance with the bootstrap statistic
     cov.j = 0
     for (i in 1:B) {
-      cov.j = cov.j + (Yij.diff[j,i] * t.diff[b,i])
+      cov.j = cov.j + ((Yij.mat[j,i] - Y.j[j]) * (coeff.mat[b,i] - t.j[b]))/B
     }
-    covs = c(covs, cov.j/B)
+    covs = c(covs, cov.j)
   }
-  sdbs = rbind(sdbs, covs)
+  cov.mat = rbind(cov.mat, covs)
 }
+```
+
+```{r}
+# With the calculated covariances for each point, 
+# calculate the smooth bootstrap standard deviation
+sdbs = rep(0, 78)
+for (i in 1:nrow(cov.mat)) {
+  sdbs[i] = (sum(cov.mat[i,] * cov.mat[i,]))^(1/2)
+}
+
+# Calculate the standard bootstrap confidence intervals
+standard.std = NULL
+for (i in 1:nrow(cov.mat)) {
+  std = sum((1/B) * (coeff.mat[i,] - mean(coeff.mat[i,]))^2)^(1/2)
+  standard.std = c(standard.std, std)
+}
+
+# Calculate the percentile confidence intervals
+p025 = NULL
+p975 = NULL
+for (i in 1:nrow(cov.mat)) {
+  p025 = c(p025, quantile(t.diff[i,], 0.025))
+  p975 = c(p975, quantile(t.diff[i,], 0.975))
+}
+
+conf.mat = as_tibble(cbind(t.j, sdbs, standard.std, p025, p975))
+```
+
+```{r}
+conf.mat %>% 
+  mutate(idx = 1:nrow(conf.mat)) %>% 
+  ggplot(data = ., aes(x = idx, y = t.j)) +
+  geom_point() +
+  geom_errorbar(ymin = t.j - qnorm(0.025)*sdbs,
+                ymax = t.j - qnorm(0.975)*sdbs, 
+                color = "red", alpha = 0.3) +
+  geom_errorbar(aes(x = idx + 0.3),
+                ymin = p025,
+                ymax = p975, 
+                color = "blue", alpha = 0.3) +
+  geom_errorbar(ymin = t.j - qnorm(0.025) * standard.std,
+                ymax = t.j + qnorm(0.025) * standard.std, 
+                color = "green", alpha = 0.3)
 ```
 

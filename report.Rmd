@@ -40,9 +40,9 @@ In order to find an optimal $\lambda$ for the model, we will use 5-fold cross-va
 
 ## Bootstrap Smoothing
 
-Efron et. al laid out a methodology for using bagging to create smoothed estimators, standard errors and confidence intervals [1]. We applied Efron's methodology to create another predictive logistic model. A logistic-LASSO model was created for each of $B$ bootstrap samples. A prediction was made from these $B$ models using a majority vote; that is, each model predicts each mouse as either a control or with Down syndrome, and the prediction that is made the most is used as the final prediction.
+Efron et. al laid out a methodology for using bagging to create smoothed estimators, standard errors and confidence intervals [1]. We applied Efron's methodology to another logistic-LASSO to create another predictive logistic model. A logistic-LASSO model was created for each of $B$ bootstrap samples. Each of these $B$ models forms a prediction, and a final prediction is made using a majority vote.
 
-A smoothed estimate of each of the regression coefficients for a final model was created by averaging the calculated $\beta$'s per Efron's bagging methodology.
+In order to create a smoothed estimate for each of the regression coefficients, each coefficient was averaged among the $B$ models per Efron's bagging methodology.
 
 $$
 s(y) = \frac{1}{B}\sum^B_{i=1}t(y^*)
@@ -50,7 +50,7 @@ $$
 
 where $t(y^*)$ is the list of regression coefficients $\beta$ in this context.
 
-In order to make inferences, we calculated a smoothed standard error according to Efron. The smoothed standard error is given by:
+We calculated a smoothed standard error according to Efron's paper. The smoothed standard error is given by:
 $$
 \widetilde{sd_B} = \bigg[ \sum^n_{j=1} \widehat{cov_j^2}  \bigg]^\frac{1}{2}
 $$
@@ -61,21 +61,17 @@ $$
 
 $\widehat{cov_j}$ represents the bootstrap covariance between $Y^*_{ij$ and $t^*_i$. $Y_{ij$ represents the number of elements in the bootstrap sample $y^*_i$ contains the original data point $y_j$. $t^*_.$ represents the smoothed bootstrap estimate for the statistic $t_i^*$. 
 
-We note that $\widetilde{sd_B}$ is biased upwards for the true value of $\widetilde{sd}$, but the bias correction deal with calculating the expectation of the ideal bootstrap smoothed estimate $s_0$, which is intractable for this particular problem. 
-
-### Regression Coefficient Inference
-
-With $\widetilde{sd_B}$, we can create a smoothed confidence interval around the bootstrap estimate:
+We note that $\widetilde{sd_B}$ is biased upwards for the true value of $\widetilde{sd}$, but the bias correction deal with calculating the expectation of the ideal bootstrap smoothed estimate $s_0$, which is intractable for this particular problem. With $\widetilde{sd_B}$, we can create a smoothed confidence interval around the bootstrap estimate:
 
 $$
 s(y) \pm 1.96 \times \widetilde{sd_B}
 $$
 
-Each regression coefficient will have a smoothed confidence interval associated with it. Any interval containing 0 will be considered non-significant association to Down syndrome. 
+Each regression coefficient will have a smoothed confidence interval associated with it. Any interval containing 0 will be considered non-significant association to Down syndrome. Efron notes that the smoothed standard error is less than the unsmoothed standard error and the percentile intervals, so we will also compare different bootstrap confidence intervals. 
 
 # Results
 
-
+We used 1000 bootstrap samples to calculate our estimates.
 
 # References 
 
