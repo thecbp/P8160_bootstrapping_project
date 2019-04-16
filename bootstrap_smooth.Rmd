@@ -19,7 +19,7 @@ Mode <- function(x) {
 }
 ```
 
-#Reading and cleaning the data
+# Reading and cleaning the data
 ```{r}
 down_dat = read_csv("Down.csv") %>% select(-MouseID) %>% mutate(Class = as.factor(Class)) %>% 
   na.omit() #getting rid of nas since glmnet cannot handle missing data
@@ -45,7 +45,7 @@ lambda_seq = seq(max(model_glmnet$lambda), max(model_glmnet$lambda)*0.001, lengt
 ```
 
 ## Fitting and predicting using our model and built in lasso regression function
-```{r}
+```{r fitting prediction using our model and built-in lasso}
 #Our model
 start = Sys.time()
 log_lasso = optimize(as.data.frame(x_train),y_train, lambda_seq, rep(0.01, 77))
@@ -75,7 +75,7 @@ lambda_glmnet = lasso_glmnet_cv$lambda.min
 
 ## Building the bootstrap-smoothing function
 ```{r}
-boot_smooth <- function(x_train,y_train,x_test,y_test,lambda_seq,iterations=1000){
+boot_smooth <- function(x_train,y_train,x_test,y_test,lambda_seq,iterations=100){
   predictions <- foreach(m = 1:iterations,.combine = cbind, .packages = "glmnet") %dopar% {
     boot_positions <- sample(nrow(x_train), size = nrow(x_train), replace = T)
     boot_pos <- 1:nrow(x_train) %in% boot_positions
@@ -108,50 +108,65 @@ lambda_boot = NA
 ```{r}
 #Build a result table
 result_frame = data.frame(model = c("Our lasso", "Built in cv lasso", "Boot smooth mehtod"), accuracy = c(accuracy_our_model, accuracy_glmnet, accuracy_boot),
-           mse = c(mse_our_model, mse_glmnet, mse_boot), time = c(time_our_model,time_glmnet,time_boot),
+           MSE = c(mse_our_model, mse_glmnet, mse_boot), time = c(time_our_model,time_glmnet,time_boot),
            lambda_min = c(lambda_our_model, lambda_glmnet, lambda_boot))
 knitr::kable(result_frame)
 ```
 
 # 3.Compare the two approaches in predicting Down syndrome, and report your findings.
-## We are going to use 5-fold cross validation on the full dataset to compare the MSE and accuracy of the two approaches. 
+## We are going to use 4-fold cross validation on the full dataset to compare the MSE and accuracy of the two approaches. 
 ```{r}
 # Set the index for 5 fold cross-validation
 set.seed(1000)
-n_folds <- 5
+n_folds <- 4
 folds_i <- sample(rep(1:n_folds, length.out = nrow(x_full)))
-cv_tmp <- matrix(NA, nrow = n_folds, ncol = 4)
-for (k in 1:n_folds) {
-  #getting the train and test dataset for this fold
-  test_i <- which(folds_i == k)
-  x_test = x_full[test_i,]
-  y_test = y_full[test_i]
-  x_train = x_full[-test_i,]
-  y_train = y_full[-test_i]
-  
-  #Lasoo
-  lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
-  y_response_glmnet = predict.cv.glmnet(lasso_glmnet_cv, newx = x_test, type = "response", s = "lambda.min")
-  #results
-  accuracy_glmnet = mean((y_response_glmnet>0.5) == y_test) 
-  mse_glmnet = mean((y_response_glmnet - y_test)^2)
-  
-  #bootstrap smooth
-  y_response_boot = boot_smooth(x_train,y_train,x_test,y_test, lambda_seq = lambda_seq, iterations = 100)
-  #results
-  accuracy_boot = mean((y_response_boot > 0.5) == y_test)
-  mse_boot = mean((y_response_boot - y_test)^2)
-  
-  #Building the result dataframe
-  cv_tmp[k, 1] = accuracy_glmnet
-  cv_tmp[k, 2] = accuracy_boot
-  cv_tmp[k, 3] = mse_glmnet
-  cv_tmp[k, 4] = mse_boot
+result_pool = data.frame()
+for (boot_n in c(50,100,200,300)) {#Number of bootstrap samples for smooth bootstraping
+  cv_tmp <- matrix(NA, nrow = n_folds, ncol = 4)
+  for (k in 1:n_folds) {
+    #getting the train and test dataset for this fold
+    test_i <- which(folds_i == k)
+    x_test = x_full[test_i,]
+    y_test = y_full[test_i]
+    x_train = x_full[-test_i,]
+    y_train = y_full[-test_i]
+    
+    #Laso
+    lasso_glmnet_cv = cv.glmnet(x_train, y_train, alpha = 1, family = "binomial", lambda = lambda_seq)
+    y_response_glmnet = predict.cv.glmnet(lasso_glmnet_cv, newx = x_test, type = "response", s = "lambda.min")
+    #results
+    accuracy_glmnet = mean((y_response_glmnet>0.5) == y_test) 
+    mse_glmnet = mean((y_response_glmnet - y_test)^2)
+    
+    #bootstrap smooth
+    y_response_boot = boot_smooth(x_train,y_train,x_test,y_test, lambda_seq = lambda_seq, iterations = boot_n)
+    #results
+    accuracy_boot = mean((y_response_boot > 0.5) == y_test)
+    mse_boot = mean((y_response_boot - y_test)^2)
+    
+    #Building the result dataframe
+    cv_tmp[k, 1] = accuracy_glmnet
+    cv_tmp[k, 2] = accuracy_boot
+    cv_tmp[k, 3] = mse_glmnet
+    cv_tmp[k, 4] = mse_boot
+  }
+  result_cv = as.data.frame(cv_tmp)
+  names(result_cv) = c("accuracy_glmnet", "accuracy_boot", "mse_glmnet", "mse_boot")
+  result_cv = colMeans(result_cv)
+  result_df = data.frame(Model = c("Logistic-Lasso", "Bootstrap smoothing"), 
+                        accuracy = c(result_cv[["accuracy_glmnet"]], result_cv[["accuracy_boot"]]),
+                        MSE = c(result_cv[["mse_glmnet"]], result_cv[["mse_boot"]])，
+                        Boot_sample = c(1,boot_n))
+  result_pool = rbind(result_pool, result_df)
+  print(c("finished ", boot_n))
 }
-result_cv = as.data.frame(cv_tmp)
-names(result_cv) = c("accuracy_glmnet", "accuracy_boot", "mse_glmnet", "mse_boot")
-result_cv = colMeans(result_cv)
-result_cv
+result_pool = unique(result_pool) #Logistic-lasso results are repeated
+knitr::kable(result_pool)
+```
+
+```{r}
+result_pool %>% filter(Boot_sample > 2) %>% ggplot(aes(x = Boot_sample, y = MSE)) + geom_line() + 
+  labs(title = "The bootstraped sample size for each prediction and prediction error")
 ```
 
 It seems they have the same accuracy. 
@@ -189,7 +204,7 @@ boot_smooth_select_feature <- function(x,y,lambda_seq,iterations=100){
  }
 ```
 
-##Using this algorithm on the full dataset
+## Using this algorithm on the full dataset
 ```{r}
 result = boot_smooth_select_feature(x_full,y_full, lambda_seq, iterations = 10)
 knitr::kable(result)
