@@ -8,7 +8,6 @@ library(foreach)
 library(iterators)
 
 # Quick little set of functions to make creating and optimizing a Logisitc LASSO model easier
-
 optimize = function(data, resp, lambdas, start) {
   # Parameters: 
   # data : data to train a Logistic LASSO model on
@@ -29,18 +28,64 @@ optimize = function(data, resp, lambdas, start) {
     )
 }
 
-predict = function(model, newdata) {
+# Experimental version of the algorithm
+reglog = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000, print = FALSE) {
   ### Parameters:
-  # model : a LogLASSO model 
-  # newdata : the data that you wish you predict on
+  # X : design matrix, does include an intercept column                                                 
+  # y : response variable (should be binary)                          
+  # beta : starting beta coefficients to start from                   
+  # lambda : constraining parameter for LASSO penalization            
+  # tol : how precise should our convergence be                       
+  # maxiter : how many iterations should be performed before stopping 
   
-  # returns an array of predicted values for the new data
+  # return a list containing the matrix of the coefficients and the iteration matrix
   
-  u = exp(as.matrix(newdata) %*% model$coefficients)
-  return(u / (1 + u))
+  X = as.matrix(X) # Convert data into matrix for easier manipulation
+  names(beta) = colnames(X) # Assign original covariate names to the betas
+  
+  # Iteration setup
+  j = 0
+  loglik = calc.likelihood(beta, X, y, lambda)
+  prev.loglik = Inf
+
+  path = c(iter = j, loglik = loglik, beta)
+  
+  while (j < maxiter && abs(prev.loglik - loglik) > tol && loglik < Inf) {
+    
+    j = j + 1
+    prev.loglik = loglik
+    
+    # Coordinate descent through all of the betas 
+    for (k in 1:length(beta)) {
+      
+      # Check if the beta is already 0, if so, skip:
+      if (beta[k] == 0) { next }
+      
+      # Calculate working params
+      work = compile(X, y, beta)
+      z.rm.k = X[,-k] %*% beta[-k]
+      val = sum(work$w * X[,k] * (work$z - z.rm.k))
+      beta[k] = (1/sum(work$w * X[,k]^2)) * soft(val, lambda)  
+    }
+    
+    # Recalculate the objective
+    loglik = calc.likelihood(beta, X, y, lambda)
+    if (print) { print(paste(j, round(abs(prev.loglik - loglik), 8))) }
+    
+    # Append it to tracking matrix
+    path = rbind(path, c(iter = j, loglik = loglik, beta))
+  } 
+  
+  return(list(
+    path = as.tibble(path),
+    coefficients = beta,
+    iter = j,
+    loglik = loglik)
+  )
 }
 
-LogLASSO.CD = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000) {
+# OLD IMPLEMENTATION FOR PROJECT 2
+LogLASSO.CD = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000, print = FALSE) {
   ### Parameters:
   # X : design matrix, does include an intercept column                                                 
   # y : response variable (should be binary)                          
@@ -58,11 +103,13 @@ LogLASSO.CD = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000) {
   # Iteration setup
   j = 0
   work = compile(X, y, beta)
+  beta[1] = sum(work$w * (work$z - X %*% beta)) / sum(work$w)
   obj = calc.obj(beta, X, y, lambda)
   diff.obj = Inf
+  
   path = c(iter = j, obj = obj, beta)
-  beta[1] = sum(work$w * (work$z - X %*% beta)) / sum(work$w)
-  while (j < maxiter && diff.obj > tol) {
+  
+  while (j < maxiter && diff.obj > tol && obj < Inf) {
     
     j = j + 1
     prev.obj = obj
@@ -77,13 +124,14 @@ LogLASSO.CD = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000) {
     }
     
     # Recalculate the objective
-    work = compile(X, y, beta)
     obj = calc.obj(beta, X, y, lambda)
     
     # Convergence check calculation
-    diff.obj = abs(prev.obj - obj) # check difference in log-likelihood
-    # diff.obj = norm(as.matrix(beta - prev.beta), "F")
+    # diff.obj = abs(prev.obj - obj) # check difference in log-likelihood
+    diff.obj = norm(as.matrix(beta - prev.beta), "F")
     prev.obj = obj
+    
+    if (print) { print(paste(j, round(diff.obj, 8))) }
     
     # Append it to tracking matrix
     path = rbind(path, c(iter = j, obj = obj, beta))
@@ -97,6 +145,73 @@ LogLASSO.CD = function(X, y, beta, lambda, tol = 1e-5, maxiter = 1000) {
   )
 }
 
+create.sol.path = function(lambdas, start, data, resp, tol = 1e-5, print = FALSE) {
+  ### Parameters: 
+  # lambdas : the sequence of lambdas that you want to create solutions for
+  # start : the starting beta coefficients
+  # data : the data to estimate the coefficients from
+  # resp : the response variable you're trying to predict
+  
+  # returns an matrix of the lambda and the computed beta coefficients for that lambda
+  
+  coeff.path = NULL
+  coeffs = start
+  for (l in 1:length(lambdas)) {
+    fit = reglog(data, resp, coeffs, lambdas[l], tol = tol)
+    coeffs = fit$coefficients
+    coeff.path = rbind(coeff.path, c(lambda = lambdas[l], 
+                                     iter = fit$iter, 
+                                     loglik = fit$loglik, 
+                                     fit$coefficients))
+    if (print) {
+      print(paste("Iter", l, "done,", iter, "loops needed for convergence",  sep = " "))
+    }
+  }
+  return(coeff.path)
+}
+
+lambda.cv = function(lambdas, start, data, resp, kfolds = 5) {
+  ### Parameters: 
+  # lambdas : the sequence of lambdas that you want to create solutions for
+  # start : the starting beta coefficients
+  # data : the data to estimate the coefficients from
+  # resp : the response variable you're trying to predict
+  
+  # returns a matrix of average test MSES against a sequence of given lambdas
+  
+  nCores = 6 # change to whatever fits your specific system
+  registerDoParallel(nCores)
+  
+  folds = crossv_kfold(data, k = kfolds)
+  
+  res = foreach(i = 1:length(lambdas), .combine = rbind) %dopar% { 
+    fold.mses = NULL
+    for (k in 1:nrow(folds)) {
+      
+      # Grab the specific training indexes
+      train.idx = folds[k,1][[1]][[toString(k)]]$idx
+      test.idx = folds[k,2][[1]][[toString(k)]]$idx
+      
+      # Split up the data into the training and test datasets
+      train.X = data[train.idx,]
+      test.X = data[test.idx,]
+      train.y = resp[train.idx]
+      test.y = resp[test.idx]
+      
+      # Perform the logistic-LASSO
+      fit = reglog(X = train.X, y = train.y, beta = start, lambda = lambdas[i])
+      preds = predict(fit, test.X)
+      
+      # Calculate the test MSE for the fold
+      fold.mse = mean((test.y - preds)^2)
+      fold.mses = c(fold.mses, fold.mse)
+    }
+    fold.se = sqrt(var(fold.mses)/5)
+    c(lambda = lambdas[i], log.lambda = log(lambdas[i]), avg.fold.mse = mean(fold.mses), avg.fold.se = fold.se)
+  }
+  return(as.tibble(res))
+}
+
 soft = function(beta, gamma) {
   ### Parameters:
   # beta : the original coefficient beta from a regression
@@ -107,7 +222,7 @@ soft = function(beta, gamma) {
   return(sign(beta) * max(abs(beta) - gamma, 0))
 }
 
-calc.obj = function(betas, data, resp, lambda) {
+calc.likelihood = function(betas, data, resp, lambda) {
   ### Parameters:
   # intercept : the intercept term of the betas (scalar)
   # data : the associated data for each beta in betas (n x p matrix)
@@ -115,6 +230,14 @@ calc.obj = function(betas, data, resp, lambda) {
   # betas : all the non-intercept beta coefficients (p x 1 array)
   
   # return the log-likelihood value for a logistic model
+  params = compile(data, resp, betas)
+  LS = sum(params$w * (params$z - (data %*% betas))^2) / (2 * nrow(data))
+  beta.penalty = lambda * sum(abs(betas))
+  return(LS + beta.penalty)
+}
+
+calc.obj = function(beta, X, y, lambda) {
+  # old version, named poorly
   params = compile(data, resp, betas)
   LS = (2 * nrow(data))^(-1) * sum(params$w * (params$z - (data %*% betas))^2)
   beta.penalty = lambda * sum(abs(betas))
@@ -127,6 +250,17 @@ calc.beta.norm = function(beta1, beta2) {
   
   # returns the Frobenius norm between two beta vectors
   return(norm(as.matrix(beta1 - beta2), "F"))
+}
+
+predict = function(model, newdata) {
+  ### Parameters:
+  # model : a LogLASSO model 
+  # newdata : the data that you wish you predict on
+  
+  # returns an array of predicted values for the new data
+  
+  u = exp(as.matrix(newdata) %*% model$coefficients)
+  return(u / (1 + u))
 }
 
 compile = function(data, resp, betas) {
@@ -181,96 +315,4 @@ calc.working.resp = function(data, resp, betas) {
   p = calc.cur.p(data, betas)
   w = calc.working.weights(p)
   return((data %*% betas) + ((resp - p) / w))
-}
-
-
-
-lambda.cv = function(lambdas, start, data, resp, k = 5) {
-  ### Parameters: 
-  # lambdas : the sequence of lambdas that you want to create solutions for
-  # start : the starting beta coefficients
-  # data : the data to estimate the coefficients from
-  # resp : the response variable you're trying to predict
-  
-  # returns a matrix of average test MSES against a sequence of given lambdas
-  
-  folds = crossv_kfold(data, k = k)
-  path = NULL
-  i = 0
-  
-  for (l in lambdas) {
-    # Reset the storage of the fold MSEs
-    fold.mses = NULL
-    i = i + 1
-    for (k in 1:nrow(folds)) {
-      
-      # Grab the specific training indexes
-      train.idx = folds[k,1][[1]][[toString(k)]]$idx
-      test.idx = folds[k,2][[1]][[toString(k)]]$idx
-      # Split up the data into the training and test datasets
-      train.X = data[train.idx,]
-      test.X = data[test.idx,]
-      train.y = resp[train.idx]
-      test.y = resp[test.idx]
-      
-      # Perform the logistic-LASSO
-      fit = LogLASSO.CD(X = train.X, y = train.y, beta = start, lambda = l)
-      u = exp(as.matrix(test.X) %*% fit$coefficients)
-      z = u / (1 + u)
-      
-      # Calculate the test MSE for the fold
-      fold.mse = mean((test.y - z)^2)
-      fold.mses = c(fold.mses, fold.mse)
-    }
-    fold.se = sqrt(var(fold.mses)/5)
-    
-    path = rbind(path, 
-                 c(lambda = l, log.lambda = log(l), 
-                   avg.fold.mse = mean(fold.mses), avg.fold.se = fold.se))
-    print(paste("Iteration:", i, "done"))
-  }
-  return(as.tibble(path))
-}
-
-lambda.cv.par = function(lambdas, start, data, resp, k = 5) {
-  ### Parameters: 
-  # lambdas : the sequence of lambdas that you want to create solutions for
-  # start : the starting beta coefficients
-  # data : the data to estimate the coefficients from
-  # resp : the response variable you're trying to predict
-  
-  # returns a matrix of average test MSES against a sequence of given lambdas
-  
-  nCores = 6 # change to whatever fits your specific system
-  registerDoParallel(nCores)
-  
-  folds = crossv_kfold(data, k = k)
-  
-  res = foreach(i = 1:length(lambdas), .combine = rbind) %dopar% { 
-    fold.mses = NULL
-    for (k in 1:nrow(folds)) {
-      
-      # Grab the specific training indexes
-      train.idx = folds[k,1][[1]][[toString(k)]]$idx
-      test.idx = folds[k,2][[1]][[toString(k)]]$idx
-      
-      # Split up the data into the training and test datasets
-      train.X = data[train.idx,]
-      test.X = data[test.idx,]
-      train.y = resp[train.idx]
-      test.y = resp[test.idx]
-      
-      # Perform the logistic-LASSO
-      fit = LogLASSO.CD(X = train.X, y = train.y, beta = start, lambda = lambdas[i])
-      u = exp(as.matrix(test.X) %*% fit$coefficients)
-      z = u / (1 + u)
-      
-      # Calculate the test MSE for the fold
-      fold.mse = mean((test.y - z)^2)
-      fold.mses = c(fold.mses, fold.mse)
-    }
-    fold.se = sqrt(var(fold.mses)/5)
-    c(lambda = lambdas[i], log.lambda = log(lambdas[i]), avg.fold.mse = mean(fold.mses), avg.fold.se = fold.se)
-  }
-  return(as.tibble(res))
 }
