@@ -46,8 +46,6 @@ coef.comp = tibble(
   glm = matrix(coef(glm.fit)),
   regll = check.LL$coefficients
 )
-View(coef.comp)
-plot(glm.cv)
 ```
 
 ```{r}

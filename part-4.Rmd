@@ -26,13 +26,20 @@ library(iterators)
 nCores = 6 # change to whatever fits your specific system
 registerDoParallel(nCores)
 
+standardize = function(col) {
+  mean = mean(col)
+  sd = sd(col)
+  return((col - mean)/sd)
+}
+
 ds = read.csv("Down.csv") %>% 
   mutate(
-    class = ifelse(Class == "Control", 0, 1)) %>% 
+    class = ifelse(Class == "Control", 0, 1)
+    ) %>% 
   select(-MouseID, -Class) %>% 
   na.omit() # getting rid of nas since glmnet cannot handle missing data
 
-ds.X = ds %>% select(-class)
+ds.X = ds %>% select(-class) %>% map_df(.x = ., standardize)
 ds.y = ds$class
 ```
 
@@ -47,6 +54,7 @@ boot.count = function(idx, data) {
 ```
 
 ```{r, bootstrapping }
+set.seed(8160)
 # Custom function to combine multiple outputs in parallel
 comb = function(x, ...) {  
   mapply(cbind, x, ..., SIMPLIFY=FALSE)
@@ -55,8 +63,6 @@ comb = function(x, ...) {
 # Parallelize the bootstrapping
 B = 1000
 bs = foreach(i = 1:B, .combine = "comb") %dopar% {
-  res = multiResultClass()
-               
   # Create the bootstrap sample
   boot.idx = sample(nrow(ds), size = nrow(ds), replace = T)
   boot.X = ds.X[boot.idx,] %>% as.matrix(.)
@@ -197,5 +203,15 @@ ggplot(data = conf.mat.extra) +
 
 ```{r}
 # Need to extract names of significant proteins
+sigs = conf.mat.extra %>% 
+  mutate(protein = c("Intercept", colnames(ds.X))) %>% 
+  filter(is.significant == TRUE) %>% 
+  select(protein, t.j, efron.lb, efron.ub)
+
+knitr::kable(sigs)
+```
+
+```{r}
+write.csv(conf.mat.extra, "efron.sd.csv")
 ```
 
